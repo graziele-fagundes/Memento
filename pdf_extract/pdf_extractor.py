@@ -5,6 +5,7 @@ from models import PDFDocument, PDFBlock, Flashcard
 from qgqa.generator import generate_flashcard
 import fitz
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from prompt_toolkit import prompt
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -57,6 +58,32 @@ def handle_pdf_upload(user):
         file_bytes = f.read()
 
     saved_path = save_pdf(user.id, path, file_bytes)
+    blocks = extract_blocks(saved_path)
+
+    # Etapa de curadoria
+    curated_blocks = []
+    print("\n--- Curadoria dos Blocos ---")
+    for i, block in enumerate(blocks):
+        print(f"\n🔹 Bloco {i+1}:\n{block}\n")
+        action = input("[Enter = manter | e = editar | x = excluir] > ").strip().lower()
+        
+        if action == "x":
+            print("❌ Bloco excluído.")
+            continue
+        elif action == "e":
+            print("✏️ Editando bloco:")
+            new_block = prompt("Edite o bloco: ", default=block)
+            new_block = new_block.strip()
+            if new_block:
+                curated_blocks.append(new_block)
+            else:
+                print("⚠️ Bloco vazio após edição. Ignorado.")
+        else:
+            curated_blocks.append(block)
+
+    if not curated_blocks:
+        print("⚠️ Nenhum bloco aprovado. Upload cancelado.")
+        return
 
     db = SessionLocal()
     pdf_doc = PDFDocument(file_path=saved_path, uploader_id=user.id)
@@ -64,8 +91,7 @@ def handle_pdf_upload(user):
     db.commit()
     db.refresh(pdf_doc)
 
-    blocks = extract_blocks(saved_path)
-    for i, block_text in enumerate(blocks):
+    for i, block_text in enumerate(curated_blocks):
         block = PDFBlock(pdf_id=pdf_doc.id, block_order=i, text_content=block_text)
         db.add(block)
         db.commit()
@@ -79,5 +105,6 @@ def handle_pdf_upload(user):
             answer=answer
         )
         db.add(flashcard)
+
     db.commit()
-    print(f"{len(blocks)} blocos e flashcards salvos.")
+    print(f"✅ {len(curated_blocks)} blocos e flashcards salvos.")
