@@ -2,7 +2,7 @@ import os
 import fitz 
 from database import SessionLocal
 from models import PDFDocument, PDFBlock, Flashcard
-from qa.generator import generate_flashcard
+from qgqa.generator import generate_flashcard
 import fitz
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
