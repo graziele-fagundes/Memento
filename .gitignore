@@ -1,0 +1,32 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.env/
+env/
+*.env
+
+# VSCode settings
+.vscode/
+
+# PDF uploads and generated data
+uploads/
+fsrs_data/
+*.pdf
+
+# SQLite database
+*.db
+
+# Logs and debug
+*.log
+*.tmp
+
+# Python egg metadata and build
+*.egg-info/
+build/
+dist/
