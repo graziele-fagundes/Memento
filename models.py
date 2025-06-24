@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Float
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -24,18 +24,23 @@ class PDFBlock(Base):
     block_order = Column(Integer)
     text_content = Column(Text, nullable=False)
 
-class Flashcard(Base):
-    __tablename__ = "flashcards"
+class QA(Base):
+    __tablename__ = "qas"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     pdf_block_id = Column(Integer, ForeignKey("pdf_blocks.id"), nullable=False)
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
 
-    state = Column(Integer) 
+class UserHistory(Base):
+    __tablename__ = "users_history"
+    id = Column(Integer, primary_key=True)
+    qa_id = Column(Integer, ForeignKey("qa.id"))
+    user_answer = Column(Text)
+    grade = Column(Integer)
+    state = Column(Integer)
     step = Column(Integer)
-    difficulty = Column(Integer)
-    stability = Column(Integer)
-    last_grade = Column(Integer)
-    last_review = Column(DateTime)
+    difficulty = Column(Float)
+    stability = Column(Float)
+    review = Column(DateTime)
     due = Column(DateTime)

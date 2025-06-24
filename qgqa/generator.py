@@ -1,5 +1,5 @@
 from database import SessionLocal
-from models import Flashcard, PDFBlock
+from models import QA, PDFBlock, UserHistory
 from datetime import datetime, timezone
 from fsrs import Scheduler, Card, Rating, State
 
@@ -17,57 +17,59 @@ state_map = {
 
 scheduler = Scheduler()
 
-def generate_flashcard(block_text):
+def generate_qa(block_text):
     return "Pergunta placeholder?", "Resposta placeholder."
 
-def create_card_from_db(flashcard: Flashcard) -> Card:
+def create_card_from_history(history: UserHistory | None) -> Card:
     card = Card()
+    if history:
+        card.state = state_map.get(history.state)
+        card.step = history.step
+        card.difficulty = history.difficulty
+        card.stability = history.stability
 
-    if flashcard.difficulty is not None:
-        card.state = state_map.get(flashcard.state)
-        card.step = flashcard.step
-        card.difficulty = flashcard.difficulty
-        card.stability = flashcard.stability
-
-        if flashcard.last_review is not None:
-            card.last_review = flashcard.last_review.replace(tzinfo=timezone.utc)
+        if history.review is not None:
+            card.last_review = history.review.replace(tzinfo=timezone.utc)
         else:
-            card.last_review = flashcard.last_review
-
-        card.due = flashcard.due
+            card.last_review = history.review
 
     return card
+
+def get_latest_history(db, qa_id):
+    return db.query(UserHistory).filter_by(qa_id=qa_id).order_by(UserHistory.review.desc()).first()
 
 def start_review(user):
     db = SessionLocal()
     now = datetime.now(timezone.utc)
 
-    flashcards = db.query(Flashcard, PDFBlock).join(PDFBlock, Flashcard.pdf_block_id == PDFBlock.id).filter(Flashcard.user_id == user.id).all()
+    qas = db.query(QA, PDFBlock).join(
+        PDFBlock, QA.pdf_block_id == PDFBlock.id
+    ).filter(QA.user_id == user.id).all()
 
     revisables = []
-    for f,b in flashcards:
-        due = f.due
+    for qa, b in qas:
+        history = get_latest_history(db, qa.id)
+        due = history.due if history else None
         if due is not None:
             due = due.replace(tzinfo=timezone.utc)
         if due is None or due <= now:
-            revisables.append((f, b))
+            revisables.append((qa, b, history))
 
     if not revisables:
-        print("Nenhum flashcard para revisar.")
+        print("Nenhum QA para revisar.")
         return
 
-    print(f"📒 Você tem {len(revisables)} flashcards para revisar.")
-    
-    # Order by due date (none first, then by due date)
-    revisables.sort(key=lambda x: (x[0].due is not None, x[0].due))
+    print(f"📒 Você tem {len(revisables)} QAs para revisar.")
 
-    for f,b in revisables:
+    for qa, b, history in revisables:
         print("\n------------------------------")
-        print("ID:", f.id)
+        print("ID:", qa.id)
         print("Bloco: ", b.text_content)
-        print("Q:", f.question)
-        input("Sua resposta: ")
-        print("A:", f.answer)
+        if history:
+            print("Ultima nota:", history.grade)
+        print("Q:", qa.question)
+        user_answer = input("Sua resposta: ")
+        print("A:", qa.answer)
 
         try:
             print("Nota: 1=Again, 2=Hard, 3=Good, 4=Easy")
@@ -80,20 +82,24 @@ def start_review(user):
             print("Erro:", e)
             continue
 
-        card = create_card_from_db(f)
+        card = create_card_from_history(history)
         
-        updated_card, review_log = scheduler.review_card(card, rating)
+        updated_card, review_log = scheduler.review_card(card,rating)
 
-        f.state = updated_card.state.value
-        f.step = updated_card.step
-        f.difficulty = updated_card.difficulty
-        f.stability = updated_card.stability
-        f.last_grade = review_log.rating.value
-        f.last_review = review_log.review_datetime
-        f.due = updated_card.due
+        new_history = UserHistory(
+            qa_id=qa.id,
+            user_answer=user_answer,
+            state=updated_card.state.value,
+            step=updated_card.step,
+            difficulty=updated_card.difficulty,
+            stability=updated_card.stability,
+            grade=grade,
+            review=now,
+            due=updated_card.due.replace(tzinfo=timezone.utc) if updated_card.due else None
+        )
+        db.add(new_history)
 
-        print(f"📅 Próxima revisão: {f.due.astimezone().strftime('%Y-%m-%d %H:%M:%S')}")
-
+        print(f"📅 Próxima revisão: {updated_card.due.astimezone().strftime('%Y-%m-%d %H:%M:%S')}")
         db.commit()
-    print("✅ Revisão concluída.")
 
+    print("✅ Revisão concluída.")

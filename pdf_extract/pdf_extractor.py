@@ -1,8 +1,8 @@
 import os
 import fitz 
 from database import SessionLocal
-from models import PDFDocument, PDFBlock, Flashcard
-from qgqa.generator import generate_flashcard
+from models import PDFDocument, PDFBlock, QA
+from qgqa.generator import generate_qa
 import fitz
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from prompt_toolkit import prompt
@@ -97,14 +97,14 @@ def handle_pdf_upload(user):
         db.commit()
         db.refresh(block)
 
-        question, answer = generate_flashcard(block_text)
-        flashcard = Flashcard(
+        question, answer = generate_qa(block_text)
+        qa = QA(
             user_id=user.id,
             pdf_block_id=block.id,
             question=question,
             answer=answer
         )
-        db.add(flashcard)
+        db.add(qa)
 
     db.commit()
-    print(f"✅ {len(curated_blocks)} blocos e flashcards salvos.")
+    print(f"✅ {len(curated_blocks)} blocos e QAs salvos.")
