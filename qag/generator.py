@@ -17,8 +17,24 @@ state_map = {
 
 scheduler = Scheduler()
 
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import BitsAndBytesConfig
+import torch
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+)
+
+model_qag = AutoModelForCausalLM.from_pretrained("graziele-fagundes/Sabia7B-QAG", device_map="cuda", quantization_config=bnb_config)
+tokenizer_qag = AutoTokenizer.from_pretrained("graziele-fagundes/Sabia7B-QAG", use_fast=True)   
+
 def generate_qa(block_text):
-    return "Pergunta placeholder?", "Resposta placeholder."
+    inputs = tokenizer_qag(block_text, return_tensors="pt")
+    outputs = model_qag.generate(**inputs)
+    print(tokenizer_qag.decode(outputs[0], skip_special_tokens=True))
+    return "pergunta", "resposta"
 
 def create_card_from_history(history: UserHistory | None) -> Card:
     card = Card()

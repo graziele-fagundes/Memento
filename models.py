@@ -35,7 +35,7 @@ class QA(Base):
 class UserHistory(Base):
     __tablename__ = "users_history"
     id = Column(Integer, primary_key=True)
-    qa_id = Column(Integer, ForeignKey("qa.id"))
+    qa_id = Column(Integer, ForeignKey("qas.id"))
     user_answer = Column(Text)
     grade = Column(Integer)
     state = Column(Integer)

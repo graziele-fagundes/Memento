@@ -1,6 +1,6 @@
 from auth.auth import login, register
 from pdf_extract.pdf_extractor import handle_pdf_upload
-from qgqa.generator import start_review
+from qag.generator import start_review
 from models import Base
 from database import engine
 
