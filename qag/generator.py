@@ -2,6 +2,10 @@ from database import SessionLocal
 from models import QA, PDFBlock, UserHistory
 from datetime import datetime, timezone
 from fsrs import Scheduler, Card, Rating, State
+from grading.grading import predict_grade
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import BitsAndBytesConfig
+import torch
 
 rating_map = {
     1: Rating.Again,
@@ -17,24 +21,31 @@ state_map = {
 
 scheduler = Scheduler()
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers import BitsAndBytesConfig
-import torch
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type="nf4",
     bnb_4bit_compute_dtype=torch.float16,
 )
-
 model_qag = AutoModelForCausalLM.from_pretrained("graziele-fagundes/Sabia7B-QAG", device_map="cuda", quantization_config=bnb_config)
 tokenizer_qag = AutoTokenizer.from_pretrained("graziele-fagundes/Sabia7B-QAG", use_fast=True)   
 
 def generate_qa(block_text):
-    inputs = tokenizer_qag(block_text, return_tensors="pt")
-    outputs = model_qag.generate(**inputs)
-    print(tokenizer_qag.decode(outputs[0], skip_special_tokens=True))
-    return "pergunta", "resposta"
+    prompt = "Dado o contexto, gere uma pergunta e uma resposta. A resposta de cada pergunta é um segmento do contexto correspondente. A resposta deve ser curta e direta. \n### Contexto: " + block_text + "\n### Pergunta:"
+    inputs = tokenizer_qag(prompt, return_tensors="pt").input_ids.to("cuda")
+    output = model_qag.generate(
+            input_ids=inputs, 
+            max_length=2048,
+            return_dict_in_generate=True,
+            output_scores=True,
+    )
+    prediction_text = tokenizer_qag.batch_decode(output[0], skip_special_tokens=True)
+    prediction_texts = prediction_text[0]
+
+    question = prediction_texts.split("### Pergunta: ")[1].split("### Resposta: ")[0].strip()
+    answer = prediction_texts.split("### Resposta:")[1].strip()
+
+    return question, answer
 
 def create_card_from_history(history: UserHistory | None) -> Card:
     card = Card()
@@ -88,8 +99,8 @@ def start_review(user):
         print("A:", qa.answer)
 
         try:
-            print("Nota: 1=Again, 2=Hard, 3=Good, 4=Easy")
-            grade = int(input("Nota: "))
+            grade = predict_grade(qa.question, qa.answer, user_answer) + 1 
+            print(f"Nota prevista: {grade} (1-4)")
             rating = rating_map.get(grade)
             if not rating:
                 print("Nota inválida. Pulando.")
