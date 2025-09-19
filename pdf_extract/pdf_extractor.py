@@ -5,9 +5,10 @@ from qag.generator import generate_qa
 from prompt_toolkit import prompt
 from docling.document_converter import DocumentConverter
 from docling.chunking import HybridChunker
-
+import logging
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+logging.getLogger("docling").setLevel(logging.ERROR)
 
 def save_pdf(user_id, original_path, file_bytes):
     user_dir = os.path.join(UPLOAD_DIR, str(user_id))
@@ -37,6 +38,7 @@ def handle_pdf_upload(user):
     with open(path, "rb") as f:
         file_bytes = f.read()
 
+    print("⏳ Extraindo texto do PDF...")
     saved_path = save_pdf(user.id, path, file_bytes)
     blocks = extract_blocks_with_docling(saved_path)
 
@@ -47,6 +49,8 @@ def handle_pdf_upload(user):
     db.refresh(pdf_doc)
 
     for i, block_text in enumerate(blocks):
+        # Remover \n
+        block_text = block_text.replace("\n", " ")
         block = PDFBlock(pdf_id=pdf_doc.id, block_order=i, text_content=block_text)
         db.add(block)
         db.commit()

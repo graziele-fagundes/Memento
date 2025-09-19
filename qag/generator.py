@@ -44,7 +44,6 @@ def generate_qa(block, user_id):
     # ==========================
     strategies = [
         {"name": "greedy", "label": "Greedy Search", "allow_regen": False, "params": {"do_sample": False}},
-        {"name": "beam", "label": "Beam Search", "allow_regen": False, "params": {"num_beams": 3, "do_sample": False}},
         {"name": "top_p", "label": "Top-p Sampling", "allow_regen": True, "params": {"do_sample": True, "top_p": 0.9, "top_k": 50}}
     ]
 
@@ -53,7 +52,7 @@ def generate_qa(block, user_id):
 
     db = SessionLocal()
 
-    print("\n" + "-" * 100)
+    print("\n" + "=" * 100)
     print(f"📘 Texto usado como contexto:\n{block.text_content[:500]}...\n")
     
     for strat in strategies:
@@ -80,8 +79,8 @@ def generate_qa(block, user_id):
             print("\n" + "=" * 60)
             print(f"✨ Estratégia: {strat['label']}")
 
-            print(f"\n❓ Pergunta:\n{question}")
-            print(f"💡 Resposta:\n{answer}\n")
+            print(f"\nPergunta:\n{question}")
+            print(f"Resposta:\n{answer}\n")
 
             print("=" * 60)
 
