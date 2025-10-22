@@ -4,7 +4,7 @@ Este repositório contém o código-fonte do projeto **Memento**, desenvolvido c
 
 Memento é um sistema de estudos inteligente projetado para otimizar o aprendizado, que opera inteiramente via **terminal (CLI)**. A aplicação processa materiais de estudo (PDFs) e utiliza Modelos de Linguagem (LLMs) treinados especificamente para gerar perguntas, avaliar as respostas dos usuários e aplicar a técnica de **repetição espaçada** para reforçar a memorização.
 
-## ✨ Funcionalidades Principais
+## Funcionalidades Principais
 
 * **Processamento de Conteúdo:** Utiliza a biblioteca `docling` para processar documentos PDF e extrair o texto para análise.
 * **Geração de Perguntas e Respostas (QAG):** Utiliza um modelo de IA treinado (`graziele-fagundes/Sabia7B-QAG`) para gerar automaticamente "flashcards" (pares de pergunta e resposta) relevantes sobre o conteúdo.
@@ -12,7 +12,7 @@ Memento é um sistema de estudos inteligente projetado para otimizar o aprendiza
 * **Repetição Espaçada (Spaced Repetition):** Com base no desempenho do usuário, o sistema agenda a próxima revisão de cada flashcard em intervalos de tempo otimizados, maximizando a retenção.
 * **Gerenciamento de Usuários:** Sistema de autenticação local (via terminal) com armazenamento seguro de senhas (utilizando hash) em um banco de dados local.
 
-## 🛠️ Tecnologias e Modelos
+## Tecnologias e Modelos
 
 O projeto foi construído em **Python**, com foco em processamento de linguagem natural e operação local.
 
@@ -26,7 +26,7 @@ O projeto foi construído em **Python**, com foco em processamento de linguagem 
 * **Processamento de Documentos:**
     * **`docling`**: Biblioteca utilizada para a extração de texto de arquivos PDF.
 
-## 📂 Estrutura do Repositório
+## Estrutura do Repositório
 
 O projeto está organizado nos seguintes módulos principais:
 
@@ -44,7 +44,7 @@ O projeto está organizado nos seguintes módulos principais:
 └── .gitignore
 ````
 
-## 🚀 Como Executar o Projeto
+## Como Executar o Projeto
 
 Para executar o Memento localmente, siga estes passos:
 
@@ -77,7 +77,7 @@ Para executar o Memento localmente, siga estes passos:
     ```
     A aplicação será iniciada no seu terminal. Siga as instruções na tela para se registrar ou fazer login.
 
-## 👩‍💻 Autora
+## Autora
 
 * **Graziele Fagundes** - [github.com/graziele-fagundes](https://github.com/graziele-fagundes)
 ````
