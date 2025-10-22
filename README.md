@@ -26,31 +26,13 @@ O projeto foi construído em **Python**, com foco em processamento de linguagem 
 * **Processamento de Documentos:**
     * **`docling`**: Biblioteca utilizada para a extração de texto de arquivos PDF.
 
-## Estrutura do Repositório
-
-O projeto está organizado nos seguintes módulos principais:
-
-```
-/
-├── auth/           \# Módulo de autenticação e gerenciamento de usuários (CLI)
-├── grading/        \# Lógica para avaliação (grading) usando o modelo BERTimbau
-├── pdf\_extract/    \# Funções para extração de texto de PDFs (com docling)
-├── qag/            \# Módulo de Geração de Perguntas (QAG) usando o modelo Sabiá
-├── user\_history/   \# Gerenciamento do histórico e da lógica de repetição espaçada
-│
-├── database.py     \# Configuração da conexão com o banco de dados SQLite
-├── main.py         \# Ponto de entrada da aplicação (interface de linha de comando - CLI)
-├── models.py       \# Definição dos modelos/schemas do banco de dados (SQLAlchemy)
-└── .gitignore
-````
-
 ## Como Executar o Projeto
 
 Para executar o Memento localmente, siga estes passos:
 
 1.  **Clone o repositório:**
     ```
-    git clone [https://github.com/graziele-fagundes/Memento.git](https://github.com/graziele-fagundes/Memento.git)
+    git clone https://github.com/graziele-fagundes/Memento.git
     cd Memento
     ```
 
@@ -78,6 +60,4 @@ Para executar o Memento localmente, siga estes passos:
     A aplicação será iniciada no seu terminal. Siga as instruções na tela para se registrar ou fazer login.
 
 ## Autora
-
 * **Graziele Fagundes** - [github.com/graziele-fagundes](https://github.com/graziele-fagundes)
-````
