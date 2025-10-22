@@ -16,6 +16,9 @@ class PDFDocument(Base):
     file_path = Column(String(500), nullable=False)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
     uploader_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Relações
+    blocks = relationship("PDFBlock", back_populates="pdf_document")
 
 class PDFBlock(Base):
     __tablename__ = "pdf_blocks"
@@ -23,6 +26,10 @@ class PDFBlock(Base):
     pdf_id = Column(Integer, ForeignKey("pdf_documents.id"), nullable=False)
     block_order = Column(Integer)
     text_content = Column(Text, nullable=False)
+    
+    # Relações
+    pdf_document = relationship("PDFDocument", back_populates="blocks")
+    qas = relationship("QA", back_populates="pdf_block")
 
 class QA(Base):
     __tablename__ = "qas"
@@ -31,6 +38,10 @@ class QA(Base):
     pdf_block_id = Column(Integer, ForeignKey("pdf_blocks.id"), nullable=False)
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
+    
+    # Relações
+    pdf_block = relationship("PDFBlock", back_populates="qas")
+    user_history = relationship("UserHistory", back_populates="qa")
 
 class UserHistory(Base):
     __tablename__ = "users_history"
@@ -44,3 +55,6 @@ class UserHistory(Base):
     stability = Column(Float)
     review = Column(DateTime)
     due = Column(DateTime)
+    
+    # Relações
+    qa = relationship("QA", back_populates="user_history")

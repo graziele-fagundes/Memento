@@ -7,6 +7,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import BitsAndBytesConfig
 import torch
 
+# FSRS
 rating_map = {
     1: Rating.Again,
     2: Rating.Hard,
@@ -18,10 +19,9 @@ state_map = {
     2: State.Review,
     3: State.Relearning,
 }
-
 scheduler = Scheduler()
 
-
+# Modelo QAG
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type="nf4",
@@ -29,6 +29,7 @@ bnb_config = BitsAndBytesConfig(
 )
 model_qag = AutoModelForCausalLM.from_pretrained("graziele-fagundes/Sabia7B-QAG", device_map="cuda", quantization_config=bnb_config)
 tokenizer_qag = AutoTokenizer.from_pretrained("graziele-fagundes/Sabia7B-QAG", use_fast=True)   
+
 
 def generate_qa(block, user_id):
     prompt = (
@@ -39,78 +40,134 @@ def generate_qa(block, user_id):
     )
     inputs = tokenizer_qag(prompt, return_tensors="pt").input_ids.to("cuda")
 
-    # ==========================
-    # Estratégias de geração
-    # ==========================
-    strategies = [
-        {"name": "greedy", "label": "Greedy Search", "allow_regen": False, "params": {"do_sample": False}},
-        {"name": "top_p", "label": "Top-p Sampling", "allow_regen": True, "params": {"do_sample": True, "top_p": 0.9, "top_k": 50}}
-    ]
-
-    questions_answers = []
+    db = SessionLocal()
     seen_qas = set()
 
-    db = SessionLocal()
-
     print("\n" + "=" * 100)
-    print(f"📘 Texto usado como contexto:\n{block.text_content[:500]}...\n")
-    
-    for strat in strategies:
-        while True:
-            output = model_qag.generate(
-                input_ids=inputs,
-                max_length=2048,
-                return_dict_in_generate=True,
-                output_scores=True,
-                **strat["params"]
-            )
-            decoded = tokenizer_qag.decode(output.sequences[0], skip_special_tokens=True)
+    print(f"📘 Texto usado como contexto (tamanho {len(block.text_content)}):\n{block.text_content}\n")
 
-            if "### Pergunta:" in decoded and "### Resposta:" in decoded:
-                question = decoded.split("### Pergunta:")[1].split("### Resposta:")[0].strip()
-                answer = decoded.split("### Resposta:")[1].strip()
-            else:
-                question = decoded.strip()
-                answer = ""
+    # ==========================
+    # Etapa 1: Greedy
+    # ==========================
+    while True:
+        output = model_qag.generate(
+            input_ids=inputs,
+            max_length=2048,
+            return_dict_in_generate=True,
+            output_scores=True,
+            do_sample=False
+        )
+        decoded = tokenizer_qag.decode(output.sequences[0], skip_special_tokens=True)
 
-            if (question, answer) in seen_qas:
-                break  # Evita QA duplicada exata
+        if "### Pergunta:" in decoded and "### Resposta:" in decoded:
+            question = decoded.split("### Pergunta:")[1].split("### Resposta:")[0].strip()
+            answer = decoded.split("### Resposta:")[1].strip()
+        else:
+            question = decoded.strip()
+            answer = ""
 
-            print("\n" + "=" * 60)
-            print(f"✨ Estratégia: {strat['label']}")
+        if (question, answer) in seen_qas:
+            return []
+        seen_qas.add((question, answer))
 
-            print(f"\nPergunta:\n{question}")
-            print(f"Resposta:\n{answer}\n")
+        # Deixa pergunta e resposta bem formuladas (? e . no final) (primeira letra maiúscula)
+        if not question.endswith("?"):
+            question += "?"
+        if not answer.endswith("."):
+            answer += "."
+        question = question[0].upper() + question[1:]
+        answer = answer[0].upper() + answer[1:]
 
-            print("=" * 60)
+        print("=" * 60)
+        print("✨ Estratégia: Greedy Search")
+        print(f"\nPergunta:\n{question}")
+        print(f"Resposta:\n{answer}\n")
+        print("=" * 60)
 
-            # Input do usuário
-            if strat["allow_regen"]:
-                user_input = input("👉 Digite [a = aprovar | r = reprovar | g = gerar de novo] > ").lower()
-            else:
-                user_input = input("👉 Digite [a = aprovar | r = reprovar] > ").lower()
+        user_input = input("👉 Digite [a = aprovar | r = reprovar | g = gerar de novo] > ").lower()
 
-            if user_input == 'a':
-                qa = QA(user_id=user_id, pdf_block_id=block.id, question=question, answer=answer)
-                db.add(qa)
-                db.commit()
-                db.refresh(qa)
-                questions_answers.append((question, answer))
-                seen_qas.add((question, answer))
-                print("✅ QA aprovada e salva!")
-                break
-            elif user_input == 'r':
-                print("❌ QA rejeitada. Passando para a próxima estratégia.")
-                seen_qas.add((question, answer))
-                break
-            elif user_input == 'g' and strat["allow_regen"]:
-                print("🔄 Gerando novamente...\n")
-                continue
-            else:
-                print("⚠️ Opção inválida.")
-                continue
+        if user_input == 'a':
+            qa = QA(user_id=user_id, pdf_block_id=block.id, question=question, answer=answer)
+            db.add(qa)
+            db.commit()
+            db.refresh(qa)
+            print("✅ QA aprovada e salva!")
+            return [(question, answer)]
 
-    return questions_answers
+        elif user_input == 'r':
+            print("❌ QA rejeitada. Passando para o próximo bloco.")
+            return []
+
+        elif user_input == 'g':
+            print("🔄 Mudando para Top-p Sampling...\n")
+            break
+
+        else:
+            print("⚠️ Opção inválida.")
+            continue
+
+    # ==========================
+    # Etapa 2: Top-p (loop até decidir)
+    # ==========================
+    while True:
+        output = model_qag.generate(
+            input_ids=inputs,
+            max_length=2048,
+            return_dict_in_generate=True,
+            output_scores=True,
+            do_sample=True,
+            top_p=0.9
+        )
+        decoded = tokenizer_qag.decode(output.sequences[0], skip_special_tokens=True)
+
+        if "### Pergunta:" in decoded and "### Resposta:" in decoded:
+            question = decoded.split("### Pergunta:")[1].split("### Resposta:")[0].strip()
+            answer = decoded.split("### Resposta:")[1].strip()
+        else:
+            question = decoded.strip()
+            answer = ""
+
+        if (question, answer) in seen_qas:
+            print("⚠️ QA duplicada encontrada, gerando de novo...")
+            continue
+        seen_qas.add((question, answer))
+
+        # Deixa pergunta e resposta bem formuladas (? e . no final) (primeira letra maiúscula)
+        if not question.endswith("?"):
+            question += "?"
+        if not answer.endswith("."):
+            answer += "."
+        question = question[0].upper() + question[1:]
+        answer = answer[0].upper() + answer[1:]
+
+        print("=" * 60)
+        print("✨ Estratégia: Top-p Sampling")
+        print(f"\nPergunta:\n{question}")
+        print(f"Resposta:\n{answer}\n")
+        print("=" * 60)
+
+        user_input = input("👉 Digite [a = aprovar | r = reprovar | g = gerar de novo] > ").lower()
+
+        if user_input == 'a':
+            qa = QA(user_id=user_id, pdf_block_id=block.id, question=question, answer=answer)
+            db.add(qa)
+            db.commit()
+            db.refresh(qa)
+            print("✅ QA aprovada e salva!")
+            return [(question, answer)]
+
+        elif user_input == 'r':
+            print("❌ QA rejeitada. Passando para o próximo bloco.")
+            return []
+
+        elif user_input == 'g':
+            print("🔄 Gerando novamente (Top-p)...\n")
+            continue
+
+        else:
+            print("⚠️ Opção inválida.")
+            continue
+
 
 def create_card_from_history(history: UserHistory | None) -> Card:
     card = Card()
@@ -156,16 +213,15 @@ def start_review(user):
     for qa, b, history in revisables:
         print("\n------------------------------")
         print("ID:", qa.id)
-        print("Bloco: ", b.text_content)
         if history:
             print("Ultima nota:", history.grade)
-        print("Q:", qa.question)
-        user_answer = input("Sua resposta: ")
-        print("A:", qa.answer)
-
+        print("Pergunta:", qa.question)
+        print("Gabarito:", qa.answer)
+        user_answer = input("\nSua resposta: ")
+        
         try:
             grade = predict_grade(qa.question, qa.answer, user_answer) + 1 
-            print(f"Nota prevista: {grade} (1-4)")
+            print(f"Nota: {grade} (1-4)")
             rating = rating_map.get(grade)
             if not rating:
                 print("Nota inválida. Pulando.")
@@ -191,7 +247,7 @@ def start_review(user):
         )
         db.add(new_history)
 
-        print(f"📅 Próxima revisão: {updated_card.due.astimezone().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"📅 Próxima revisão: {updated_card.due.astimezone().strftime('%d/%m/%Y %H:%M')}")
         db.commit()
 
     print("✅ Revisão concluída.")

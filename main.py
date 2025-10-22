@@ -1,6 +1,7 @@
 from auth.auth import login, register
 from pdf_extract.pdf_extractor import handle_pdf_upload
 from qag.generator import start_review
+from user_history.user_history import user_history_menu
 from models import Base
 from database import engine
 
@@ -14,11 +15,13 @@ if not user:
     exit()
 
 while True:
-    print("\nMenu:\n1. Upload PDF\n2. Iniciar Revisão\n3. Sair")
+    print("\nMenu:\n1. Upload PDF\n2. Iniciar Revisão\n3. Gerenciar QAs\n4. Sair")
     op = input("Opção: ")
     if op == "1":
         handle_pdf_upload(user)
     elif op == "2":
         start_review(user)
     elif op == "3":
+        user_history_menu(user)
+    elif op == "4":
         break
