@@ -61,3 +61,6 @@ Para executar o Memento localmente, siga estes passos:
 
 ## Autora
 * **Graziele Fagundes** - [github.com/graziele-fagundes](https://github.com/graziele-fagundes)
+  
+## 📝 Monografia
+⏳ Monografia com todos os detalhes técnicos aqui em breve.
