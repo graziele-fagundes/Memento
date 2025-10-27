@@ -10,21 +10,7 @@ Memento é um sistema de estudos inteligente projetado para otimizar o aprendiza
 * **Geração de Perguntas e Respostas (QAG):** Utiliza um modelo de IA treinado (`graziele-fagundes/Sabia7B-QAG`) para gerar automaticamente "flashcards" (pares de pergunta e resposta) relevantes sobre o conteúdo.
 * **Avaliação (Grading) Inteligente:** Quando o usuário responde a uma pergunta no terminal, o sistema usa um modelo de IA treinado (`graziele-fagundes/BERTimbau-Grading`) para avaliar a qualidade semântica da resposta.
 * **Repetição Espaçada (Spaced Repetition):** Com base no desempenho do usuário, o sistema agenda a próxima revisão de cada flashcard em intervalos de tempo otimizados, maximizando a retenção.
-* **Gerenciamento de Usuários:** Sistema de autenticação local (via terminal) com armazenamento seguro de senhas (utilizando hash) em um banco de dados local.
-
-## Tecnologias e Modelos
-
-O projeto foi construído em **Python**, com foco em processamento de linguagem natural e operação local.
-
-* **Modelos de IA (Fine-tuned):**
-    * **`graziele-fagundes/Sabia7B-QAG`**: Um modelo baseado no Sabiá-7B que foi treinado (fine-tuning) pela autora especificamente para a tarefa de Geração de Perguntas e Respostas (QAG) em português.
-    * **`graziele-fagundes/BERTimbau-Grading`**: Um modelo baseado no BERTimbau que foi treinado (fine-tuning) pela autora para a tarefa de avaliação semântica de respostas (Grading).
-
-* **Banco de Dados:**
-    * **`SQLite`**: Utilizado para armazenar dados de usuários, flashcards e histórico de estudos localmente.
-
-* **Processamento de Documentos:**
-    * **`docling`**: Biblioteca utilizada para a extração de texto de arquivos PDF.
+* **Banco de Dados Local (SQLite):** Responsável pelo armazenamento persistente de usuários, flashcards e histórico de estudos.
 
 ## Como Executar o Projeto
 
