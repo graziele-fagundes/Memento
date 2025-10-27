@@ -6,9 +6,9 @@ Memento é um sistema de estudos inteligente projetado para otimizar o aprendiza
 
 ## Funcionalidades Principais
 
-* **Processamento de Conteúdo:** Utiliza a biblioteca `docling` para processar documentos PDF e extrair o texto para análise.
-* **Geração de Perguntas e Respostas (QAG):** Utiliza um modelo de IA treinado (`graziele-fagundes/Sabia7B-QAG`) para gerar automaticamente "flashcards" (pares de pergunta e resposta) relevantes sobre o conteúdo.
-* **Avaliação (Grading) Inteligente:** Quando o usuário responde a uma pergunta no terminal, o sistema usa um modelo de IA treinado (`graziele-fagundes/BERTimbau-Grading`) para avaliar a qualidade semântica da resposta.
+* **Processamento de Conteúdo:** Utiliza a biblioteca `docling` para processar documentos PDF e extrair o texto para geração.
+* **Geração de Perguntas e Respostas (QAG):** Utiliza o modelo [**graziele-fagundes/Sabia7B-QAG**](https://huggingface.co/graziele-fagundes/Sabia7B-QAG), treinado para gerar automaticamente *flashcards* (pares de pergunta e resposta) relevantes com base no conteúdo extraído.
+* **Avaliação (Grading) Inteligente:** Emprega o modelo [**graziele-fagundes/BERTimbau-Grading**](https://huggingface.co/graziele-fagundes/BERTimbau-Grading) para analisar e pontuar semanticamente as respostas fornecidas pelo usuário, comparando-as com as respostas ideais.
 * **Repetição Espaçada (Spaced Repetition):** Com base no desempenho do usuário, o sistema agenda a próxima revisão de cada flashcard em intervalos de tempo otimizados, maximizando a retenção.
 * **Banco de Dados Local (SQLite):** Responsável pelo armazenamento persistente de usuários, flashcards e histórico de estudos.
 
@@ -46,7 +46,7 @@ Para executar o Memento localmente, siga estes passos:
     A aplicação será iniciada no seu terminal. Siga as instruções na tela para se registrar ou fazer login.
 
 ## Autora
-* **Graziele Fagundes** - [github.com/graziele-fagundes](https://github.com/graziele-fagundes)
+**Graziele Fagundes** - [github.com/graziele-fagundes](https://github.com/graziele-fagundes)
   
 ## Monografia
 ⏳ Monografia com todos os detalhes técnicos aqui em breve.
