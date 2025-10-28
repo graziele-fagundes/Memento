@@ -45,6 +45,11 @@ Para executar o Memento localmente, siga estes passos:
     ```
     A aplicação será iniciada no seu terminal. Siga as instruções na tela para se registrar ou fazer login.
 
+**Requisitos de Hardware e Ambiente**
+
+Para executar os modelos de IA localmente, é **necessário ter uma GPU compatível com CUDA** (por exemplo, NVIDIA RTX) e **CUDA Toolkit** instalado e configurado corretamente.
+O processamento dos modelos **Sabia7B-QAG** e **BERTimbau-Grading** exige aceleração por GPU para funcionar de forma estável e com bom desempenho.  
+
 ## Autora
 **Graziele Fagundes** - [github.com/graziele-fagundes](https://github.com/graziele-fagundes)
   
