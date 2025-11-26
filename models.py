@@ -9,6 +9,8 @@ class User(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
+    # Relações
+    histories = relationship("UserHistory", back_populates="user")
 
 class PDFDocument(Base):
     __tablename__ = "pdf_documents"
@@ -24,7 +26,6 @@ class PDFBlock(Base):
     __tablename__ = "pdf_blocks"
     id = Column(Integer, primary_key=True)
     pdf_id = Column(Integer, ForeignKey("pdf_documents.id"), nullable=False)
-    block_order = Column(Integer)
     text_content = Column(Text, nullable=False)
     
     # Relações
@@ -32,7 +33,7 @@ class PDFBlock(Base):
     qas = relationship("QA", back_populates="pdf_block")
 
 class QA(Base):
-    __tablename__ = "qas"
+    __tablename__ = "questions_answers"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     pdf_block_id = Column(Integer, ForeignKey("pdf_blocks.id"), nullable=False)
@@ -46,7 +47,8 @@ class QA(Base):
 class UserHistory(Base):
     __tablename__ = "users_history"
     id = Column(Integer, primary_key=True)
-    qa_id = Column(Integer, ForeignKey("qas.id"))
+    qa_id = Column(Integer, ForeignKey("questions_answers.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user_answer = Column(Text)
     grade = Column(Integer)
     state = Column(Integer)
@@ -58,3 +60,4 @@ class UserHistory(Base):
     
     # Relações
     qa = relationship("QA", back_populates="user_history")
+    user = relationship("User", back_populates="histories")
