@@ -47,8 +47,8 @@ def handle_pdf_upload(user):
 
     print("⏳ Extraindo texto do PDF...")
     saved_path = save_pdf(user.id, path, file_bytes)
+    
     blocks = extract_blocks_with_docling(saved_path)
-    print(f"✅ Texto extraído em {len(blocks)} blocos.")
 
     db = SessionLocal()
     pdf_doc = PDFDocument(file_path=saved_path, uploader_id=user.id)

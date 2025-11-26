@@ -236,6 +236,7 @@ def start_review(user):
 
         new_history = UserHistory(
             qa_id=qa.id,
+            user_id=user.id,
             user_answer=user_answer,
             state=updated_card.state.value,
             step=updated_card.step,

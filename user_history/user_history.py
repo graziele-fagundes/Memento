@@ -53,13 +53,11 @@ def visualizar_qas(user):
             else:
                 bloco_display = bloco_texto[:50]
             
-            # Formatação inteligente da pergunta
             if len(qa.question) > 50:
                 pergunta_display = f"{qa.question[:50]}..."
             else:
                 pergunta_display = qa.question
             
-            # Formatação inteligente da resposta
             if len(qa.answer) > 50:
                 resposta_display = f"{qa.answer[:50]}..."
             else:
@@ -145,13 +143,11 @@ def visualizar_desempenho_por_qa(user):
             else:
                 status = "🔴 Precisa Revisar"
             
-            # Formatação inteligente da pergunta no desempenho
             if len(qa.question) > 50:
                 pergunta_display = f"{qa.question[:50]}..."
             else:
                 pergunta_display = qa.question
             
-            # Formatação inteligente da resposta no desempenho
             if len(qa.answer) > 50:
                 resposta_display = f"{qa.answer[:50]}..."
             else:

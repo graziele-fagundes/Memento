@@ -15,7 +15,7 @@ if not user:
     exit()
 
 while True:
-    print("\nMenu:\n1. Upload PDF\n2. Iniciar Revisão\n3. Gerenciar QAs\n4. Sair")
+    print("\nMenu:\n1. Carregar PDF\n2. Iniciar Revisão\n3. Gerenciar QAs\n4. Sair")
     op = input("Opção: ")
     if op == "1":
         handle_pdf_upload(user)
