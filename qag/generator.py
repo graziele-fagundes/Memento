@@ -5,6 +5,7 @@ from fsrs import Scheduler, Card, Rating, State
 from grading.grading import predict_grade
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import BitsAndBytesConfig
+from time_travel import get_current_time, prompt_for_travel_date
 import torch
 
 # FSRS
@@ -189,7 +190,9 @@ def get_latest_history(db, qa_id):
 
 def start_review(user):
     db = SessionLocal()
-    now = datetime.now(timezone.utc)
+    
+    # Pergunta ao usuário qual data deseja usar
+    now = prompt_for_travel_date()
 
     qas = db.query(QA, PDFBlock).join(
         PDFBlock, QA.pdf_block_id == PDFBlock.id

@@ -2,7 +2,6 @@ import os
 from database import SessionLocal
 from models import PDFDocument, PDFBlock
 from qag.generator import generate_qa
-from prompt_toolkit import prompt
 from docling.document_converter import DocumentConverter
 from docling.chunking import HybridChunker
 import logging
@@ -24,15 +23,28 @@ def save_pdf(user_id, original_path, file_bytes):
         f.write(file_bytes)
     return save_path
 
-def extract_blocks_with_docling(path):
-    """Extrai blocos do PDF usando Docling + HybridChunker."""
+def extract_blocks_with_docling(path, max_tokens=1024, use_tokenizer_limit=True):
+    """
+    Extrai blocos do PDF.
+    - Se use_tokenizer_limit=True: Usa o tokenizer do Sabiá-7b e respeita max_tokens.
+    - Se use_tokenizer_limit=False: Usa chunking padrão por estrutura (sem contagem precisa de tokens).
+    """
     doc = DocumentConverter().convert(source=path).document
-    chunker = HybridChunker()
+    
+    if use_tokenizer_limit:
+        chunker = HybridChunker(
+            tokenizer="maritaca-ai/sabia-7b", 
+            max_tokens=max_tokens,
+            merge_peers=True
+        )
+    else:
+        chunker = HybridChunker()
     
     blocks = []
     for i, chunk in enumerate(chunker.chunk(dl_doc=doc)):
         enriched_text = chunker.contextualize(chunk=chunk)
         blocks.append(enriched_text.strip())
+    
     return blocks
 
 def handle_pdf_upload(user):
@@ -45,10 +57,16 @@ def handle_pdf_upload(user):
     with open(path, "rb") as f:
         file_bytes = f.read()
 
-    print("⏳ Extraindo texto do PDF...")
+    print("⏳ Processando PDF...")
     saved_path = save_pdf(user.id, path, file_bytes)
     
-    blocks = extract_blocks_with_docling(saved_path)
+    token_limit = 1024
+    use_tokenizer = True
+    blocks = extract_blocks_with_docling(
+        saved_path, 
+        max_tokens=token_limit, 
+        use_tokenizer_limit=use_tokenizer
+    )
 
     db = SessionLocal()
     pdf_doc = PDFDocument(file_path=saved_path, uploader_id=user.id)
