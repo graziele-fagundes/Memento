@@ -191,8 +191,24 @@ def get_latest_history(db, qa_id):
 def start_review(user):
     db = SessionLocal()
     
-    # Pergunta ao usuário qual data deseja usar
-    now = prompt_for_travel_date()
+    # Menu: Normal ou Teste
+    print("\n" + "="*50)
+    print("MODO DE REVISÃO")
+    print("="*50)
+    print("1. Modo Normal (data/hora atual)")
+    print("2. Modo Teste (viagem no tempo)")
+    modo = input("\nEscolha o modo: ").strip()
+    
+    if modo == "1":
+        # Modo Normal: usa data/hora real agora
+        now = datetime.now(timezone.utc)
+        print("✅ Usando data/hora atual do sistema")
+    elif modo == "2":
+        # Modo Teste: pergunta data de viagem
+        now = prompt_for_travel_date()
+    else:
+        print("❌ Opção inválida!")
+        return
 
     qas = db.query(QA, PDFBlock).join(
         PDFBlock, QA.pdf_block_id == PDFBlock.id
@@ -207,24 +223,37 @@ def start_review(user):
         if due is None or due <= now:
             revisables.append((qa, b, history))
 
+    # Filtro opcional por ID de QA
+    if modo == "2" and revisables:
+        filtro = input("\n🎯 Deseja filtrar por ID de QA específico? (Digite ID ou Enter para pular): ").strip()
+        if filtro:
+            try:
+                qa_id_filtro = int(filtro)
+                revisables = [(qa, b, hist) for qa, b, hist in revisables if qa.id == qa_id_filtro]
+                if not revisables:
+                    print(f"❌ Nenhum QA com ID {qa_id_filtro} encontrado para revisão.")
+                    return
+                print(f"✅ Filtrando para QA ID: {qa_id_filtro}")
+            except ValueError:
+                print("❌ ID inválido!")
+                return
+
     if not revisables:
         print("Nenhum QA para revisar.")
         return
 
-    print(f"📒 Você tem {len(revisables)} QAs para revisar.")
+    print(f"\n📒 Hoje ({now.astimezone().strftime('%d/%m/%Y %H:%M')}) você tem {len(revisables)} QAs para revisar.")
 
     for qa, b, history in revisables:
-        print("\n------------------------------")
-        print("ID:", qa.id)
-        if history:
-            print("Ultima nota:", history.grade)
+        print("\n" + "-"*50)
         print("Pergunta:", qa.question)
-        print("Gabarito:", qa.answer)
         user_answer = input("\nSua resposta: ")
-        
         try:
-            grade = predict_grade(qa.question, qa.answer, user_answer) + 1 
-            print(f"Nota: {grade} (1-4)")
+            print("\nGabarito:", qa.answer)
+            bert_grade, confidence = predict_grade(qa.question, qa.answer, user_answer)
+            grade = bert_grade + 1  # Converter de 0-3 para 1-4
+            print(f"\nNota BERTimbau-Grading (0-3): {bert_grade} (confiança {confidence:.2f})")
+            print(f"Nota FSRS (1-4): {grade}")
             rating = rating_map.get(grade)
             if not rating:
                 print("Nota inválida. Pulando.")
@@ -235,7 +264,17 @@ def start_review(user):
 
         card = create_card_from_history(history)
         
-        updated_card, review_log = scheduler.review_card(card,rating)
+        updated_card, review_log = scheduler.review_card(card = card, rating = rating, review_datetime=now)
+
+        # Garantir que due está em UTC para armazenar no banco
+        due_utc = None
+        if updated_card.due:
+            # Se due tem tzinfo, converter para UTC
+            if updated_card.due.tzinfo is not None:
+                due_utc = updated_card.due.astimezone(timezone.utc).replace(tzinfo=timezone.utc)
+            else:
+                # Se é naive, assumir que já é UTC
+                due_utc = updated_card.due.replace(tzinfo=timezone.utc)
 
         new_history = UserHistory(
             qa_id=qa.id,
@@ -247,11 +286,18 @@ def start_review(user):
             stability=updated_card.stability,
             grade=grade,
             review=now,
-            due=updated_card.due.replace(tzinfo=timezone.utc) if updated_card.due else None
+            due=due_utc
         )
         db.add(new_history)
 
-        print(f"📅 Próxima revisão: {updated_card.due.astimezone().strftime('%d/%m/%Y %H:%M')}")
+        # Exibir em hora local para o usuário
+        if updated_card.due:
+            local_due = updated_card.due
+            if local_due.tzinfo is None:
+                local_due = local_due.replace(tzinfo=timezone.utc)
+            local_time = local_due.astimezone()
+            print(f"Próxima revisão: {local_time.strftime('%d/%m/%Y %H:%M')}")
         db.commit()
 
+    print("\n" + "-"*50)
     print("✅ Revisão concluída.")

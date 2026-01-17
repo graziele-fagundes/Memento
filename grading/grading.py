@@ -27,7 +27,5 @@ def predict_grade(question, reference_answer, student_answer):
         confidence = probabilities[0][predicted_class].item()
 
     final_grade = int(round(predicted_class))
-
-    print(f"Nota Modelo (0-3): {predicted_class} (confiança {confidence:.2f})")
     
-    return final_grade
+    return final_grade, confidence
